@@ -37,3 +37,46 @@ def test_decision_alt_c_true():
 def test_decision_alt_c_false():
     # 3661: the zero year and day blocks are NOT printed (C False)
     assert format_seconds_alt(3661).count(":") == 2
+
+
+# Equivalance Partitioning (format_seconds)
+@pytest.mark.parametrize(
+    "seconds, expected",
+    [
+        (-5, "-5"), #negative group
+        (30, "30"), #seconds group (below a minute)
+        (300, "5m"), #minutes group
+        (7200, "2h"), #hours group
+        (259200, "3d"), #days group
+        (63201600, "2y 1d"), #years group
+        (10**9, "31y 251d 7h 46m 40s"), # years group, but with very large value
+        (0.2, "1"), #decimal group: should round up
+    ],
+)
+def test_ep_valid_groups(seconds, expected):
+    assert format_seconds(seconds) == expected
+ 
+def test_ep_invalid_group_text():
+    with pytest.raises(TypeError):
+        format_seconds("abc")
+
+# Equivalance Partitioning (format_seconds_alt
+@pytest.mark.parametrize(
+    "seconds, expected",
+    [
+        # Under a day (Supposed to be 3 blocks)
+        (30, "00:00:30"), # seconds group
+        (300, "00:05:00"), # minutes group
+        (7200, "02:00:00"), # hours group
+        (259200, "03:00:00:00"), # 1 year (supposed to be 4 blocks)
+        (63201600, "02:01:00:00:00"), # 1 year+: (supposed to be 5 bkocks)
+        (10**9, "31:251:07:46:40"), # very large, 3-digit day block
+        (0.2, "00:00:01"), #decimal group: should round up
+    ],
+)
+def test_ep_alt_valid_groups(seconds, expected):
+    assert format_seconds_alt(seconds) == expected
+ 
+def test_ep_alt_invalid_group_text():
+    with pytest.raises(TypeError):
+        format_seconds_alt("abc")
