@@ -60,7 +60,7 @@ def test_ep_invalid_group_text():
     with pytest.raises(TypeError):
         format_seconds("abc")
 
-# Equivalance Partitioning (format_seconds_alt
+# Equivalance Partitioning (format_seconds_alt)
 @pytest.mark.parametrize(
     "seconds, expected",
     [
