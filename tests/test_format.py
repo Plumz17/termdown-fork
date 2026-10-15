@@ -68,7 +68,8 @@ def test_ep_invalid_group_text():
         (30, "00:00:30"), # seconds group
         (300, "00:05:00"), # minutes group
         (7200, "02:00:00"), # hours group
-        (259200, "03:00:00:00"), # 1 year (supposed to be 4 blocks)
+
+        (259200, "03:00:00:00"), # days group (supposed to be 4 blocks)
         (63201600, "02:01:00:00:00"), # 1 year+: (supposed to be 5 bkocks)
         (10**9, "31:251:07:46:40"), # very large, 3-digit day block
         (0.2, "00:00:01"), #decimal group: should round up
@@ -80,3 +81,28 @@ def test_ep_alt_valid_groups(seconds, expected):
 def test_ep_alt_invalid_group_text():
     with pytest.raises(TypeError):
         format_seconds_alt("abc")
+
+# Boundary Value Analysis (format_seconds)
+@pytest.mark.parametrize(
+    "seconds, expected",
+    [
+        (-1, "-1"), (0, "0"), (1, "1"), # around 0
+        (59, "59"), (60, "60"), (61, "1m 1s"), # around 60
+        (119, "1m 59s"), (120, "2m"), (121, "2m 1s"), # around 120
+        (3599, "59m 59s"), (3600, "1h"), (3601, "1h 1s"), # around 3600
+        (86399, "23h 59m 59s"), (86400, "1d"), (86401, "1d 1s"), # araound 86400
+        (31557599, "365d 5h 59m 59s"), (31557600, "1y"), (31557601, "1y 1s"), # around 31557600
+        (60.0, "60"), (60.01, "1m 1s"), # test decimals
+    ],
+)
+def test_bva_boundaries(seconds, expected):
+    assert format_seconds(seconds) == expected
+ 
+# hide_seconds has its own boundary: total_seconds > 60
+@pytest.mark.parametrize(
+    "seconds, expected",
+    [(59, "59"), (60, "60"), (61, "1m"), (3601, "1h")],
+)
+
+def test_bva_hide_seconds_boundary(seconds, expected):
+    assert format_seconds(seconds, hide_seconds=True) == expected
