@@ -1,5 +1,8 @@
 import pytest
 from datetime import datetime, timezone, timedelta
+from dateutil import tz
+from dateutil.parser import parse
+
 from termdown.utils import parse_timestr, parse_timedelta
 
 time_components = ["1y","1d","1h","1m","1s"]
@@ -8,9 +11,9 @@ seconds = {}
 for time in time_components:
     seconds[time] = parse_timedelta(time)
     
-print(seconds)
-print(parse_timedelta(""))
-print(parse_timestr("04-12-2027"))
+# print(seconds)
+# print(parse_timedelta(""))
+print(parse_timestr("10:00:00").astimezone(tz=tz.tzlocal()))
 
 datetime_now = datetime.now(timezone.utc)
 print(datetime_now)
@@ -36,18 +39,36 @@ def test_decision_a_true():
 
 # Decision Coverage (parse_timestr, ignore microseconds)
 # A: ordered duration time input
-def test_decision_delta_a():
+def test_decision_str_a():
     parsed_time = parse_timestr("1y 1d 1h 1m 1s").replace(microsecond=0)
     expected = (datetime_now + timedelta(seconds=(31557600 + 86400 + 3600 + 60 + 1))).replace(microsecond=0)
     assert parsed_time == expected
     
 # B: integer in string input for duration in seconds
-def test_decision_delta_b():
+def test_decision_str_b():
     parsed_time = parse_timestr("3000").replace(microsecond=0)
     expected = (datetime_now + timedelta(seconds=3000)).replace(microsecond=0)
     assert parsed_time == expected
     
-# C: date
+# C: datetime input
+# Invalid datetime, raise ValueError
+def test_decision_str_c_invalid_datetime():
+    with pytest.raises(ValueError):
+        parse_timestr("2027-13-32 24:60:60")
+        
+# No timezone, use local timezone
+def test_decision_str_c_no_timezone():
+    date_time = "2026-12-31 10:10:10"
+    parsed_time = parse_timestr(date_time).replace(microsecond=0)
+    expected = parse(date_time).replace(tzinfo=tz.tzlocal()).astimezone(timezone.utc).replace(microsecond=0)
+    assert parsed_time == expected
+   
+# Input only time, use tomorrow date
+def test_decision_str_c_before_now():
+    date_time = "2026-09-16 10:10:10"
+    parsed_time = parse_timestr(date_time).replace(microsecond=0)
+    expected = (parse(date_time) + timedelta(days=1)).replace(microsecond=0)
+    assert parsed_time == expected
 
 # Boundary Value Analysis (parse_timedelta) 
 @pytest.mark.parametrize(
