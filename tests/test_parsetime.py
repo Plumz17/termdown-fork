@@ -13,7 +13,7 @@ for time in time_components:
     
 # print(seconds)
 # print(parse_timedelta(""))
-print(parse_timestr("10:00:00").astimezone(tz=tz.tzlocal()))
+print(parse_timestr("99-10-10"))
 
 datetime_now = datetime.now(timezone.utc)
 print(datetime_now)
@@ -85,6 +85,19 @@ def test_bva_boundaries(values, expected):
     assert parse_timedelta(values) == expected
 
 # Boundary Value Analysis (parse_timestr) 
+@pytest.mark.parametrize(
+    "datetimes, expected",
+    [
+        # year
+        
+        # day
+        # hour
+        # minute
+        # second
+    ]
+)
+def test_bva_boudaries_str_valid(datetimes, expected):
+    assert parse_timestr(datetimes) == expected
 
 # Error Guessing (parse_timedelta)
 
