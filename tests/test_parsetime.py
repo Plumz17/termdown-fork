@@ -65,12 +65,13 @@ def test_decision_str_c_no_timezone():
    
 # Input only time, use tomorrow date
 def test_decision_str_c_before_now():
-    date_time = "2026-09-16 10:10:10"
+    date_time = "10:10:10"
     parsed_time = parse_timestr(date_time).replace(microsecond=0)
-    expected = (parse(date_time) + timedelta(days=1)).replace(microsecond=0)
+    expected = (parse(date_time) + timedelta(days=1)).replace(tzinfo=tz.tzlocal()).astimezone(timezone.utc).replace(microsecond=0)
     assert parsed_time == expected
 
-# Boundary Value Analysis (parse_timedelta) 
+# Boundary Value Analysis (parse_timedelta)
+# Use lower bound (-1, 0, 1) for every time component  
 @pytest.mark.parametrize(
     "values, expected",
     [
@@ -84,22 +85,18 @@ def test_decision_str_c_before_now():
 def test_bva_boundaries(values, expected):
     assert parse_timedelta(values) == expected
 
-# Boundary Value Analysis (parse_timestr) 
+# Error Guessing (parse_timestr)
+# Use invalid datetimes
 @pytest.mark.parametrize(
-    "datetimes, expected",
+    "datetime",
     [
-        # year
-        
-        # day
-        # hour
-        # minute
-        # second
+        "0000-01-01 12:00:00", # Invalid year
+        "2026-15-02 13:01:01", # Invalid month
+        "2025-02-31 11:23:02", # Invalid date
+        "2026-10-10 25:00:00", # Invalid hour
+        "2026-11-11 12:61:22", # Invalid minute
+        "2026-12-12 11:34:78" # Invalid second
     ]
 )
-def test_bva_boudaries_str_valid(datetimes, expected):
-    assert parse_timestr(datetimes) == expected
-
-# Error Guessing (parse_timedelta)
-
-
-# Error Guessing (parse_timestr)
+def test_error_guess(datetime):
+    with pytest.raises(ValueError): parse_timestr(datetime)
